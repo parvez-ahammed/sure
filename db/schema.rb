@@ -150,6 +150,52 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_07_120000) do
     t.index ["expires_at"], name: "index_archived_exports_on_expires_at"
   end
 
+  create_table "backup_configs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "enabled", default: false, null: false
+    t.string "provider_type", default: "google_drive", null: false
+    t.string "frequency", default: "daily", null: false
+    t.integer "retention_days", default: 30, null: false
+    t.integer "hour_utc", default: 2, null: false
+    t.integer "key_version", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "backup_credentials", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "provider_type", null: false
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "token_expires_at"
+    t.string "scope"
+    t.string "google_account_email"
+    t.string "folder_id"
+    t.string "folder_name"
+    t.datetime "verified_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_type"], name: "index_backup_credentials_on_provider_type", unique: true
+  end
+
+  create_table "backup_runs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "status", default: "pending", null: false
+    t.string "trigger", default: "scheduled", null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "error_message"
+    t.string "filename"
+    t.string "remote_file_id"
+    t.string "provider_type"
+    t.bigint "byte_size"
+    t.string "plaintext_sha256"
+    t.integer "key_version"
+    t.binary "salt"
+    t.integer "duration_ms"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_backup_runs_on_created_at"
+    t.index ["status"], name: "index_backup_runs_on_status"
+  end
+
   create_table "balances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "account_id", null: false
     t.date "date", null: false
@@ -619,6 +665,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_07_120000) do
     t.string "status", default: "pending", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "destination", default: "local_download", null: false
+    t.string "remote_file_id"
+    t.string "remote_provider_type"
     t.index ["family_id"], name: "index_family_exports_on_family_id"
   end
 
