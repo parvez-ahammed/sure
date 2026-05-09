@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+#
+# Standalone Sure backup decryption tool.
+# No Rails, no bundler — only stdlib (openssl, zlib, securerandom, digest).
+#
+# Usage:
+#   ruby decrypt_backup.rb path/to/sure_backup_<ts>_v<N>.sbk $SECRET_KEY_BASE > out.pgdump
+#   pg_restore --clean --if-exists -d sure_production out.pgdump
+#
+# .sbk format:
+#   0    7    Magic "SUREBAK"
+#   7    1    Version (0x01)
+#   8    16   Salt
+#   24   12   IV
+#   36   N    Ciphertext (AES-256-GCM, plaintext is gzipped pg_dump custom format)
+#   end-16 16 GCM auth tag
+#
+# Key derivation matches Backup::Cipher#derive_key:
+#   ActiveSupport::KeyGenerator(secret, iter=1000).generate_key(salt, 32)
+# We re-implement that PBKDF2 here without ActiveSupport.
+#
+# Exit codes: 0 success; 2 bad args; 3 format error; 4 integrity / wrong key.
+
+require "openssl"
+require "zlib"
+require "digest"
+require "stringio"
+
+MAGIC      = "SUREBAK".b
+VERSION    = 0x01
+SALT_LEN   = 16
+IV_LEN     = 12
+TAG_LEN    = 16
+HEADER_LEN = MAGIC.bytesize + 1 + SALT_LEN + IV_LEN
+KEY_BYTES  = 32
+KDF_ITERS  = 1_000
+
+def die(code, msg)
+  warn(msg)
+  exit code
+end
+
+if ARGV.size != 2
+  die 2, "usage: ruby decrypt_backup.rb <input.sbk> <SECRET_KEY_BASE>"
+end
+
+input_path, secret = ARGV
+data = File.binread(input_path)
+
+die 3, "file too short" if data.bytesize < HEADER_LEN + TAG_LEN
+header = data.byteslice(0, HEADER_LEN)
+die 3, "bad magic"      unless header.byteslice(0, MAGIC.bytesize) == MAGIC
+die 3, "unsupported version #{header.getbyte(MAGIC.bytesize)}" unless header.getbyte(MAGIC.bytesize) == VERSION
+
+salt = header.byteslice(MAGIC.bytesize + 1, SALT_LEN)
+iv   = header.byteslice(MAGIC.bytesize + 1 + SALT_LEN, IV_LEN)
+tag  = data.byteslice(data.bytesize - TAG_LEN, TAG_LEN)
+ct   = data.byteslice(HEADER_LEN, data.bytesize - HEADER_LEN - TAG_LEN)
+
+# ActiveSupport::KeyGenerator uses PBKDF2-HMAC-SHA1.
+key = OpenSSL::PKCS5.pbkdf2_hmac(secret, salt, KDF_ITERS, KEY_BYTES, OpenSSL::Digest::SHA1.new)
+
+cipher = OpenSSL::Cipher.new("aes-256-gcm").decrypt
+cipher.key = key
+cipher.iv  = iv
+cipher.auth_tag  = tag
+cipher.auth_data = header
+
+begin
+  gz = cipher.update(ct) + cipher.final
+rescue OpenSSL::Cipher::CipherError => e
+  die 4, "decrypt failed (wrong key or tampered file): #{e.message}"
+end
+
+# gz holds gzipped pg_dump custom-format. Inflate to stdout.
+$stdout.binmode
+Zlib::GzipReader.wrap(StringIO.new(gz)) do |reader|
+  while (chunk = reader.read(64 * 1024))
+    $stdout.write(chunk)
+  end
+end

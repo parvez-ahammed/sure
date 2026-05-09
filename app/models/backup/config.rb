@@ -14,10 +14,6 @@ class Backup::Config < ApplicationRecord
     first_or_create!
   end
 
-  def provider_type
-    "google_drive"
-  end
-
   def cron_expression
     case frequency
     when "daily"   then "0 #{hour_utc} * * *"

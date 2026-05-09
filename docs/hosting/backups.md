@@ -1,6 +1,6 @@
 # Self-hosted backups
 
-> Status: implementation in progress. Phase 0 (cloud export bridge) and Phase 1 (encrypted automated DB backups) are wired up. See `docs/backup-implementation-plan.md` for the full design.
+> Encrypted automated database backups uploaded to Google Drive over OAuth. Self-hosted only.
 
 Sure ships an opt-in, zero-trust backup subsystem for self-hosted deployments. This doc covers setup, the on-disk file format, and the recovery procedure.
 
@@ -87,10 +87,10 @@ You need three things:
 
 ### Decrypt
 
-Use the standalone Ruby script shipped at [`scripts/decrypt_backup.rb`](../../scripts/decrypt_backup.rb). It has **no Rails or bundler dependency** — only the Ruby stdlib.
+Use the standalone Ruby script shipped at [`bin/decrypt_backup`](../../bin/decrypt_backup). It has **no Rails or bundler dependency** — only the Ruby stdlib.
 
 ```bash
-ruby scripts/decrypt_backup.rb sure_backup_20260423_020000_v1.sbk "$SECRET_KEY_BASE" > restore.pgdump
+bin/decrypt_backup sure_backup_20260423_020000_v1.sbk "$SECRET_KEY_BASE" > restore.pgdump
 ```
 
 ### Restore into a fresh DB
