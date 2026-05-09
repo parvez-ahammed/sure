@@ -176,6 +176,7 @@ en:
       whats_new_label: What's new
       api_keys_label: API Key
       appearance_label: Appearance
+      backups_label: Backups
       bank_sync_label: Bank Sync
     settings_nav_link_large:
       next: Next

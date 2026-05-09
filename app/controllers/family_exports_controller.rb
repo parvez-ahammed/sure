@@ -9,7 +9,8 @@ class FamilyExportsController < ApplicationController
   end
 
   def create
-    @export = Current.family.family_exports.create!
+    destination = resolved_destination
+    @export = Current.family.family_exports.create!(destination: destination)
     FamilyDataExportJob.perform_later(@export)
 
     respond_to do |format|
@@ -34,7 +35,9 @@ class FamilyExportsController < ApplicationController
   end
 
   def download
-    if @export.downloadable?
+    if @export.remote?
+      redirect_to family_exports_path, notice: t("family_exports.download.remote_export", provider: @export.remote_provider_type)
+    elsif @export.downloadable?
       redirect_to @export.export_file, allow_other_host: true
     else
       redirect_to family_exports_path, alert: t("family_exports.export_not_ready")
@@ -57,4 +60,18 @@ class FamilyExportsController < ApplicationController
         redirect_to root_path, alert: t("family_exports.access_denied")
       end
     end
+
+    def resolved_destination
+      requested = params.dig(:family_export, :destination).to_s
+      return "local_download" unless FamilyExport.destinations.key?(requested)
+      return "local_download" if requested != "local_download" && !backup_destination_available?(requested)
+      requested
+    end
+
+    def backup_destination_available?(destination)
+      return false unless Backup.enabled?
+      Backup::Credential.verified.exists?(provider_type: destination)
+    end
+
+    helper_method :backup_destination_available?
 end

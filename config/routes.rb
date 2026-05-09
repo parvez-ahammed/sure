@@ -195,6 +195,15 @@ Rails.application.routes.draw do
       delete :clear_cache, on: :collection
       delete :disconnect_external_assistant, on: :collection
     end
+    resource :backups, only: %i[show], controller: "backups" do
+      patch :update_config,                                     on: :collection
+      post  :run_now,                                           on: :collection
+      post  :verify,                                            on: :collection
+      post  :rotate_key,                                        on: :collection
+      get    "oauth/start",      to: "backups/oauth#start",      on: :collection, as: :oauth_start
+      get    "oauth/callback",   to: "backups/oauth#callback",   on: :collection, as: :oauth_callback
+      delete "oauth/disconnect", to: "backups/oauth#disconnect", on: :collection, as: :oauth_disconnect
+    end
     resource :payment, only: :show
     resource :security, only: :show
     resources :webauthn_credentials, only: %i[create destroy] do

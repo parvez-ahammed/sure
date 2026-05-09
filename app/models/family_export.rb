@@ -10,6 +10,11 @@ class FamilyExport < ApplicationRecord
     failed: "failed"
   }, default: :pending, validate: true
 
+  enum :destination, {
+    local_download: "local_download",
+    google_drive: "google_drive"
+  }, default: :local_download, validate: true, prefix: :to
+
   scope :ordered, -> { order(created_at: :desc) }
 
   def filename
@@ -17,6 +22,11 @@ class FamilyExport < ApplicationRecord
   end
 
   def downloadable?
-    completed? && export_file.attached?
+    return false unless completed?
+    to_local_download? ? export_file.attached? : remote_file_id.present?
+  end
+
+  def remote?
+    !to_local_download?
   end
 end

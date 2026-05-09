@@ -1,0 +1,90 @@
+<% content_for :page_title, t(".title") %>
+
+<div class="space-y-6">
+  <% credentials_content = capture do %>
+    <% if !Backup::OauthClient.configured? %>
+      <div class="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
+        <%= t(".oauth_unconfigured_html").html_safe %>
+      </div>
+    <% elsif @credential.connected? %>
+      <div class="space-y-2 text-sm">
+        <p class="text-primary">
+          <%= icon("check-circle", color: "current") %>
+          <%= t(".connected_as", email: @credential.google_account_email || "—") %>
+        </p>
+        <p class="text-secondary"><%= t(".folder", name: @credential.folder_name.presence || "Sure Backups") %></p>
+        <%= button_to t(".disconnect"),
+              oauth_disconnect_settings_backups_path,
+              method: :delete,
+              class: "btn btn--secondary",
+              data: { turbo_confirm: t(".disconnect_confirm") } %>
+      </div>
+    <% else %>
+      <%= button_to t(".connect"),
+            oauth_start_settings_backups_path,
+            method: :get,
+            class: "btn btn--primary" %>
+    <% end %>
+  <% end %>
+  <%= render "settings/section", title: t(".credentials_title"), subtitle: t(".credentials_subtitle"), content: credentials_content %>
+
+  <% schedule_content = capture do %>
+    <%= form_with model: @config, url: update_config_settings_backups_path, method: :patch, scope: :backup_config, class: "space-y-4" do |f| %>
+      <label class="flex items-center gap-2 text-sm text-primary">
+        <%= f.check_box :enabled %>
+        <%= t(".enabled_label") %>
+      </label>
+
+      <div class="space-y-1">
+        <%= f.label :frequency, t(".frequency_label"), class: "block text-sm font-medium text-primary" %>
+        <%= f.select :frequency, Backup::Config::FREQUENCIES.map { |v| [ t(".frequency_options.#{v}"), v ] }, {}, class: "form-field__input" %>
+      </div>
+
+      <div class="space-y-1">
+        <%= f.label :hour_utc, t(".hour_utc_label"), class: "block text-sm font-medium text-primary" %>
+        <%= f.number_field :hour_utc, in: 0..23, class: "form-field__input" %>
+      </div>
+
+      <div class="space-y-1">
+        <%= f.label :retention_days, t(".retention_days_label"), class: "block text-sm font-medium text-primary" %>
+        <%= f.number_field :retention_days, in: 1..3650, class: "form-field__input" %>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <%= f.submit t(".save"), class: "btn btn--primary" %>
+        <%= button_to t(".run_now"), run_now_settings_backups_path, method: :post, class: "btn btn--secondary", disabled: !@config.enabled? %>
+      </div>
+    <% end %>
+  <% end %>
+  <%= render "settings/section", title: t(".schedule_title"), subtitle: t(".schedule_subtitle"), content: schedule_content %>
+
+  <% key_content = capture do %>
+    <% fp = Backup::KeyRegistry.fingerprint(@config.key_version) %>
+    <p class="text-sm text-secondary">
+      <%= t(".key_version_label") %>: <strong>v<%= @config.key_version %></strong>
+      <% if fp %>
+        &middot; <%= t(".key_fingerprint_label") %>: <code class="font-mono text-xs"><%= fp %></code>
+      <% end %>
+    </p>
+    <p class="text-xs text-destructive mt-2"><%= t(".key_warning") %></p>
+    <div class="mt-3">
+      <%= button_to t(".rotate_key"), rotate_key_settings_backups_path, method: :post, class: "btn btn--secondary",
+          data: { turbo_confirm: t(".rotate_confirm") } %>
+    </div>
+  <% end %>
+  <%= render "settings/section", title: t(".key_title"), subtitle: t(".key_subtitle"), content: key_content %>
+
+  <% history_content = capture do %>
+    <% last = @runs.first %>
+    <% if last && last.failed? %>
+      <div class="mb-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+        <%= t(".last_run_failed_html", message: last.error_message.to_s) %>
+      </div>
+    <% end %>
+    <%= render "runs_table", runs: @runs %>
+    <div class="mt-3">
+      <%= button_to t(".verify_last"), verify_settings_backups_path, method: :post, class: "btn btn--secondary" %>
+    </div>
+  <% end %>
+  <%= render "settings/section", title: t(".history_title"), content: history_content %>
+</div>

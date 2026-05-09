@@ -1,0 +1,68 @@
+en:
+  settings:
+    backups:
+      show:
+        breadcrumb: "Backups"
+        title: "Backups"
+        credentials_title: "Backup destination"
+        credentials_subtitle: "Connect a Google account so Sure can upload encrypted database backups to your Drive."
+        schedule_title: "Automated database backups"
+        schedule_subtitle: "When enabled, Sure will pg_dump the entire database, AES-256-GCM encrypt it, and upload to the configured destination on the schedule below."
+        history_title: "Recent backup runs"
+        oauth_unconfigured_html: "Backup OAuth is not configured. Set <code>BACKUP_GOOGLE_OAUTH_CLIENT_ID</code> and <code>BACKUP_GOOGLE_OAUTH_CLIENT_SECRET</code> in your environment, then restart the app. See <a href=\"https://github.com/we-promise/sure/blob/main/docs/hosting/backups.md\">backup setup docs</a>."
+        connect: "Connect with Google"
+        connected_as: "Connected as %{email}"
+        folder: "Folder: %{name}"
+        disconnect: "Disconnect"
+        disconnect_confirm: "Disconnect Google Drive? Future scheduled backups will fail until you reconnect. Existing backup files in Drive will not be deleted."
+        enabled_label: "Enable scheduled backups"
+        frequency_label: "Frequency"
+        frequency_options:
+          daily: "Daily"
+          weekly: "Weekly (Sundays)"
+          monthly: "Monthly (1st)"
+        hour_utc_label: "Hour of day (UTC, 0-23)"
+        retention_days_label: "Retention (days)"
+        save: "Save"
+        run_now: "Run backup now"
+        verify_last: "Verify last backup"
+        last_run_failed_html: "Most recent backup run failed: <strong>%{message}</strong>"
+        key_title: "Encryption key"
+        key_subtitle: "Backups are AES-256-GCM encrypted with a key derived from your SECRET_KEY_BASE (or BACKUP_KEY_V<n> override)."
+        key_version_label: "Active key version"
+        key_fingerprint_label: "Fingerprint"
+        key_warning: "Write down the SECRET_KEY_BASE fingerprint somewhere safe. Without it, backups cannot be decrypted."
+        rotate_key: "Rotate to next key version"
+        rotate_confirm: "Did you already provision the next key (BACKUP_KEY_V<n+1> or credentials.backup.historical_keys)? Future backups will use the new version."
+      update_config:
+        saved: "Schedule saved."
+      run_now:
+        enqueued: "Backup enqueued."
+        disabled: "Enable scheduled backups before running on demand."
+      verify:
+        no_run: "No completed backup runs to verify yet."
+        missing: "Latest backup file is no longer present at the destination."
+        ok: "Latest backup found at destination (%{filename}, %{size} bytes)."
+        failed: "Verification failed: %{message}"
+      rotate_key:
+        rotated: "Key version rotated to v%{version}. Future backups use the new key."
+        missing_key: "Cannot rotate: %{message}"
+      runs:
+        empty: "No backup runs yet."
+        headers:
+          started: "Started"
+          status: "Status"
+          trigger: "Trigger"
+          size: "Size"
+          duration: "Duration"
+          filename: "Filename"
+      oauth:
+        start:
+          not_configured: "Backup OAuth is not configured. Set BACKUP_GOOGLE_OAUTH_CLIENT_ID and BACKUP_GOOGLE_OAUTH_CLIENT_SECRET, then restart the app."
+        callback:
+          state_mismatch: "OAuth state mismatch. Please try connecting again."
+          denied: "Google access was denied."
+          connected: "Connected to Google Drive as %{email}."
+          exchange_failed: "Token exchange failed: %{message}"
+        disconnect:
+          disconnected: "Disconnected from Google Drive."

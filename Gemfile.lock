@@ -247,6 +247,8 @@ GEM
       mini_mime (~> 1.1)
       representable (~> 3.0)
       retriable (~> 3.1)
+    google-apis-drive_v3 (0.80.0)
+      google-apis-core (>= 0.15.0, < 2.a)
     google-apis-iamcredentials_v1 (0.26.0)
       google-apis-core (>= 0.15.0, < 2.a)
     google-apis-storage_v1 (0.61.0)
@@ -880,7 +882,9 @@ DEPENDENCIES
   faraday-multipart
   faraday-retry
   foreman
+  google-apis-drive_v3 (~> 0.56)
   google-cloud-storage (~> 1.59)
+  googleauth (~> 1.9)
   hotwire-livereload
   hotwire_combobox
   httparty
